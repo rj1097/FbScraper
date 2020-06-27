@@ -16,12 +16,14 @@ fbPasswd = "***************"
 driverPath = os.getcwd() + "\\chromedriver.exe"
 
 # Group element Id
-fbGroupId = "***************"
+# fbGroupId = "***********************"
+# fbGroupName = "***********************"
 
-ProfilesPerId = 10
-PostsPerId = 2
+# Group link
+fbGroupLink = "***********************"
 
-# Total posts to scrape at one go
-totalPosts = 100
+# ProfilesPerId = 10
+# PostsPerId = 2
+totalPosts = 10
 loginAttemptNo = 1
 post_scrape_attempt_no = 3

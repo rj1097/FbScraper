@@ -1,4 +1,4 @@
-from config import driverPath, fbId, fbPasswd, fbGroupName, totalPosts
+from config import driverPath, fbId, fbPasswd, fbGroupLink, totalPosts
 # from dbConnect import
 from scrapperFunctions import *
 from time import sleep
@@ -18,7 +18,7 @@ class fb_login(scrapperFunctions):
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument("--disable-notifications")
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(
             driverPath, options=chrome_options)
         self.login()
@@ -30,28 +30,32 @@ class fb_login(scrapperFunctions):
         self.find_elem_by_id("loginbutton").click()
 
     def visitGroup(self):
-        self.find_elem_by_link_text_with_wait(fbGroupName).click()
+        # self.find_elem_by_link_text_with_wait(fbGroupName).click()
+        self.driver.get(fbGroupLink)
         # self.find_elem_by_id_with_wait(fbGroupId).click()
 
     def LoadGroup(self, totalPosts=totalPosts):
         # self.visitGroup()
         self.postElements = self.find_elems_by_class_name_with_wait("_4mrt")
         count = 0
+        oldPostsLoaded = 0
         while (count < 2) & (len(self.postElements) <= totalPosts):
-            ChangeInPostsNo = len(self.postElements) - totalPosts
-            # print("Change:",ChangeInPostsNo)
             self.postElements = self.find_elems_by_class_name_with_wait(
                 "_4mrt")
-            # print("Totalsposts:",len(self.postElements))
+            ChangeInPostsNo = len(self.postElements) - oldPostsLoaded
+            print("Change:",ChangeInPostsNo)
             if ChangeInPostsNo == 0:
                 count += 1
                 sleep(2)
                 print("No new Post, Check:", count)
             else:
                 count = 0
+            oldPostsLoaded = len(self.postElements)
             self.driver.execute_script(
                 "window.scrollTo(0, document.body.scrollHeight);")
-            totalPosts = len(self.postElements)
+            sleep(1)
+        
+        print("Totalsposts:",len(self.postElements))
         print("All posts loaded")
 
     def logout(self):
