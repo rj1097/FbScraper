@@ -27,12 +27,15 @@ class db:
         # This object is required whenever you want to perform a select operation
         # or make any inserts/updates/deletes to the database
         # return mydb
-
+    def closeCursor(self):
+        cursor = self.dbConnector.cursor()
+        cursor.close()
+    
     def select_all(self, table, where="", attempt=0):
         #print("SELECT * FROM " + table + " " + where)
         try:
             cursor = self.dbConnector.cursor()
-            print("SELECT * FROM " + table + " " + where)
+            # print("SELECT * FROM " + table + " " + where)
             cursor.execute("SELECT * FROM " + table + " " + where)
 
             row = cursor.fetchall()
@@ -42,13 +45,13 @@ class db:
             return [row, total]
 
         except Error as e:
-            print("Task incomplete retrying !!!")
-            print("Error in dbConnect")
-            print(e)
+            print("Reconnecting to database !!!")
+            # print("Error in dbConnect")
+            # print(e)
             # print(type(attempt))
             if attempt < 5:
                 self.dbConnect()
-                print("DbConnectObject:", self.dbConnector)
+                # print("DbConnectObject:", self.dbConnector)
                 return self.select_all(table, where, attempt+1)
             else:
                 print(
@@ -79,13 +82,13 @@ class db:
             return [row, total]
 
         except Error as e:
-            print("Task incomplete retrying !!!")
-            print("Error in dbConnect")
-            print(e)
+            print("Reconnecting to database !!!")
+            # print("Error in dbConnect")
+            # print(e)
             # print(type(attempt))
             if attempt < 5:
                 self.dbConnect()
-                print("DbConnectObject:", self.dbConnector)
+                # print("DbConnectObject:", self.dbConnector)
                 return self.select(table, col, where, attempt+1)
             else:
                 print(
@@ -102,8 +105,8 @@ class db:
         #print("SELECT * FROM " + table + " " + where)
         try:
             cursor = self.dbConnector.cursor()
-            print("UPDATE `"+table+"` SET `" + col +
-                  "` = '" + val + "' WHERE " + where)
+            # print("UPDATE `"+table+"` SET `" + col +
+            #       "` = '" + val + "' WHERE " + where)
 
             cursor.execute("UPDATE `"+table+"` SET `" + col +
                            "` = '" + val + "' WHERE " + where)
@@ -113,13 +116,13 @@ class db:
             return cursor.rowcount
 
         except Error as e:
-            print("Task incomplete retrying !!!")
-            print("Error in dbConnect")
-            print(e)
+            print("Reconnecting to database !!!")
+            # print("Error in dbConnect")
+            # print(e)
             # print(type(attempt))
             if attempt < 5:
                 self.dbConnect()
-                print("DbConnectObject:", self.dbConnector)
+                # print("DbConnectObject:", self.dbConnector)
                 self.update(table, col, val, where, attempt+1)
                 return 1
             else:
@@ -146,7 +149,7 @@ class db:
         try:
             cursor = self.dbConnector.cursor()
             #print("SELECT `"+col+"` FROM `" + table + "` WHERE " + where)
-            print("DELETE FROM `"+table+"` WHERE " + where)
+            # print("DELETE FROM `"+table+"` WHERE " + where)
             cursor.execute("DELETE FROM `"+table+"` WHERE " + where)
 
             self.dbConnector.commit()
@@ -155,7 +158,7 @@ class db:
 
         except Error as e:
             print("Task Incomplete")
-            print(e)
+            # print(e)
 
         else:
             cursor.close()
@@ -206,13 +209,13 @@ class db:
             return 1
         except Error as e:
 
-            print("Task incomplete retrying !!!")
-            print("Error in dbConnect")
-            print(e)
+            print("Reconnecting to database !!!")
+            # print("Error in dbConnect")
+            # print(e)
             # print(type(attempt))
             if attempt < 5:
                 self.dbConnect()
-                print("DbConnectObject:", self.dbConnector)
+                # print("DbConnectObject:", self.dbConnector)
                 self.insert(values, entity, attempt+1)
                 return 1
             else:
