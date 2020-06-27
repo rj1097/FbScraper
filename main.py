@@ -5,21 +5,20 @@ from fbGroupPostsReactions import fb_group_posts_reactions
 
 if __name__ == "__main__":
     fb = fb_login()
-    # fb.LoadGroup(100)
     count = 1
     fbPosts = fb_group_posts(fb)
     fbReaction = fb_group_posts_reactions(fb)
     fbComments = fb_group_post_comments(fb)
     attempt = 0
     problematic_posts = []
-    for post in fb.postElements:
-        count += 1
+    for post in fb.postElements[:5]:
         try:
             print("###############################################################")
-            print(count)
+            print("Post No. :",count)
             fbPosts.load_posts(post)
             fbComments.loadComments(post)
             fbReaction.load_post_reactions(post)
+            count += 1
         except:
             problematic_posts.append(count-1)
     print(problematic_posts)

@@ -5,6 +5,7 @@ from scrapperFunctions import *
 from datetime import datetime
 import numpy as np
 from pytz import timezone
+from tqdm import tqdm
 
 
 class fb_group_posts_reactions(scrapperFunctions):
@@ -56,7 +57,9 @@ class fb_group_posts_reactions(scrapperFunctions):
         liked_by = self.scrape_post_reactions(postElement)
         scraped_id = scrapedReactionId()
         memberIds = scrapedMembersId()
-        for profile in liked_by:
+        print("Scraping Reactions")
+        for profile_idx in tqdm(range(len(liked_by))):
+            profile = liked_by[profile_idx]
             reaction_id = profile[0]+"&"+post_id
             if(reaction_id not in scraped_id):
                 if(profile[0] not in memberIds):
@@ -64,8 +67,9 @@ class fb_group_posts_reactions(scrapperFunctions):
                     mydb.insert(profile, "fb_group_name")
                 reaction_param = [reaction_id, post_id,
                                   scraped_date_time, profile[0]]
-                print(reaction_param)
+                # print(reaction_param)
                 mydb.insert(reaction_param, "fb_group_posts_reactions")
+        mydb.closeCursor()
         # except:
         #     print("No reaction ",post_id)
 
@@ -76,6 +80,7 @@ def scrapedReactionId():
         whereCondn = "1"
         reaction_ids, size = mydb.select(
             "fb_group_posts_reactions", "Reaction ID", whereCondn)
+        mydb.closeCursor()
         return np.array(reaction_ids)[:, 0]
     except:
         return []
@@ -86,6 +91,7 @@ def scrapedMembersId():
         mydb = db()
         whereCondn = "1"
         postIds, size = mydb.select("fb_group_name", "User ID", whereCondn)
+        mydb.closeCursor()
         return list(np.array(postIds)[:, 0])
     except:
         return []
@@ -97,6 +103,7 @@ def totalReactionsScraped(postId):
         whereCondn = " `Facebook Post ID` = " + "'"+postId+"'"
         postIds, size = mydb.select(
             "fb_group_posts_reactions", "Reaction ID", whereCondn)
+        mydb.closeCursor()
         return size
     except:
         return -1

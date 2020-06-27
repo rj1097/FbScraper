@@ -4,6 +4,7 @@ from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
 import numpy as np
+from tqdm import tqdm
 
 class fb_group_post_comments(scrapperFunctions):
     def __init__(self, fbObject):
@@ -123,7 +124,9 @@ class fb_group_post_comments(scrapperFunctions):
                 commentElements = self.find_elems_by_class_name("_4eek",postElement)
                 commentIds = scrapedCommentsId()
                 memberIds = list(scrapedMembersId())
-                for comment in commentElements:
+                print("Scraping comments")
+                for comment_idx in tqdm(range(len(commentElements))):
+                    comment = commentElements[comment_idx]
                     #print(comment.text)
                     commentBy = self.comment_by(comment)
                     commentId = commentBy+"&"+self.comment_timestamp(comment)+"&"+postId
@@ -161,8 +164,9 @@ class fb_group_post_comments(scrapperFunctions):
                         commentContent = self.comment_content(comment)
 
                         commentParam = [commentId,postId,commentDateTime,isReply,ParentCommentId,commentBy,commentContent]
-                        print(commentParam)
+                        # print(commentParam)
                         mydb.insert(commentParam,"fb_group_post_comments")
+                mydb.closeCursor()
             
             else:
                 print("No new comments !!")
@@ -178,6 +182,7 @@ def scrapedCommentsId():
         whereCondn = "1"
         commentIds,size = mydb.select("fb_group_post_comments","Comment ID",whereCondn)
         return np.array(commentIds)[:,0]
+        mydb.closeCursor()
     except:
         return []
 
@@ -186,6 +191,7 @@ def totalCommentsScraped(postId):
         mydb = db()
         whereCondn = " `Comment Post ID` = "+ "'"+postId+"'"
         postIds,size = mydb.select("fb_group_post_comments","Comment ID",whereCondn)
+        mydb.closeCursor()
         return size
     except:
         return -1
@@ -196,13 +202,14 @@ def scrapedMembersId():
         whereCondn = "1"
         postIds,size = mydb.select("fb_group_name","User ID",whereCondn)
         return list(np.array(postIds)[:,0])
+        mydb.closeCursor()
     except:
         return []
 
-if __name__ == "__main__":
-    fb = fb_login()
-    fbComments = fb_group_post_comments(fb)
-    for postElem in fb.postElements:
-        loadComments(postElem)
+# if __name__ == "__main__":
+#     fb = fb_login()
+#     fbComments = fb_group_post_comments(fb)
+#     for postElem in fb.postElements:
+#         loadComments(postElem)
 
 
