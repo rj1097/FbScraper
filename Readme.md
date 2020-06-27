@@ -17,9 +17,10 @@ This tool is made to micro-manage any facebook group. This tool uses selenium we
 
     - Add database related information.
     - Add facebook Id and password.
-    - Add the exact facebook group Name. 
+    - Add the exact facebook group link. 
     <!-- Incomplete -->
-6. Now you can run the python package.
+6. Install chrome (If not already installed) and note down the chrome version. Now download the appropriate chromedriver and put it inside the package folder.
+7. Now you can run the python package.
     
     - Use the command `python -u "PATH_TO_FBSCRAPER"\main.py"`
 
