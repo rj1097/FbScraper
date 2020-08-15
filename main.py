@@ -11,10 +11,10 @@ if __name__ == "__main__":
     fbComments = fb_group_post_comments(fb)
     attempt = 0
     problematic_posts = []
-    for post in fb.postElements[:5]:
+    for post in fb.postElements[1:]:
         try:
             print("###############################################################")
-            print("Post No. :",count)
+            print("Post No. :", count)
             fbPosts.load_posts(post)
             fbComments.loadComments(post)
             fbReaction.load_post_reactions(post)

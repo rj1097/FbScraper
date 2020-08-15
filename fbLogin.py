@@ -20,7 +20,7 @@ class fb_login(scrapperFunctions):
         chrome_options.add_argument("--disable-notifications")
         chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(
-            driverPath, options=chrome_options)
+            "E:\\FbScraper\\chromedriver.exe", options=chrome_options)
         self.login()
 
     def login(self):
@@ -43,7 +43,7 @@ class fb_login(scrapperFunctions):
             self.postElements = self.find_elems_by_class_name_with_wait(
                 "_4mrt")
             ChangeInPostsNo = len(self.postElements) - oldPostsLoaded
-            print("Change:",ChangeInPostsNo)
+            print("Change:", ChangeInPostsNo)
             if ChangeInPostsNo == 0:
                 count += 1
                 sleep(2)
@@ -54,8 +54,8 @@ class fb_login(scrapperFunctions):
             self.driver.execute_script(
                 "window.scrollTo(0, document.body.scrollHeight);")
             sleep(1)
-        
-        print("Totalsposts:",len(self.postElements))
+
+        print("Totalsposts:", len(self.postElements))
         print("All posts loaded")
 
     def logout(self):

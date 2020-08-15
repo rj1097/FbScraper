@@ -1,5 +1,5 @@
 from fbLogin import *
-from config import fbGroupId
+from config import fbGroupLink
 from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
@@ -12,6 +12,7 @@ class fb_group_posts(scrapperFunctions):
 
     def PostId(self, postElement):
         return postElement.get_attribute('id')
+
     def PostedBy(self, postElement):
         postedByNameElement = self.find_elem_by_class_name(
             "_5eit", postElement)
@@ -132,7 +133,7 @@ class fb_group_posts(scrapperFunctions):
 
             memberIds = scrapedMembersId()
             mydb = db()
-            toInsertMemIds = []
+            # toInsertMemIds = []
 
             by = self.PostedBy(postElement)
 
@@ -144,7 +145,7 @@ class fb_group_posts(scrapperFunctions):
             time = self.PostTimestamp(postElement)
             content = self.PostContent(postElement)
             typePost = self.PostType(postElement)
-            group_id = fbGroupId
+            group_id = (fbGroupLink.split("/groups/")[1]).strip('/')
             post_param = [Id, content, time, by, typePost, group_id]
             mydb.insert(post_param, "fb_group_posts")
             print(post_param)
