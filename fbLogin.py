@@ -27,7 +27,10 @@ class fb_login(scrapperFunctions):
         self.driver.get("https://facebook.com")
         self.find_elem_by_name("email").send_keys(fbId)
         self.find_elem_by_name("pass").send_keys(fbPasswd)
-        self.find_elem_by_id("loginbutton").click()
+        try:
+            self.find_elem_by_id("loginbutton").click()
+        except:
+            self.find_elem_by_name("login").click()
 
     def visitGroup(self):
         # self.find_elem_by_link_text_with_wait(fbGroupName).click()
