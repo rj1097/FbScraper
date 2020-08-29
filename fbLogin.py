@@ -13,7 +13,7 @@ class fb_login(scrapperFunctions):
 
     def loadFb(self):
         chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("-incognito")
+        chrome_options.add_argument("--incognito")
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument("--start-maximized")
