@@ -8,3 +8,4 @@ env/
 config.py
 *.ipynb
 tempCodeRunnerFile.py
+Temp/

@@ -1,4 +1,4 @@
-from config import driverPath, fbId, fbPasswd, fbGroupLink, totalPosts
+from config import driverPath, fbId, fbPasswd, fbGroupLink, totalPosts, postXpath, groupFeedXpath
 # from dbConnect import
 from scrapperFunctions import *
 from time import sleep
@@ -9,7 +9,7 @@ class fb_login(scrapperFunctions):
         self.loadFb()
         sleep(5)
         self.visitGroup()
-        self.LoadGroup()
+        # self.LoadGroup()
 
     def loadFb(self):
         chrome_options = webdriver.ChromeOptions()
@@ -18,7 +18,7 @@ class fb_login(scrapperFunctions):
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument("--disable-notifications")
-        chrome_options.add_argument("--headless")
+        # chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(
             "E:\\FbScraper\\chromedriver.exe", options=chrome_options)
         self.login()
@@ -39,12 +39,12 @@ class fb_login(scrapperFunctions):
 
     def LoadGroup(self, totalPosts=totalPosts):
         # self.visitGroup()
-        self.postElements = self.find_elems_by_class_name_with_wait("_4mrt")
+        groupFeedElement = self.find_elem_by_xpath_with_wait(groupFeedXpath)
+        self.postElements = self.find_elems_by_xpath_with_wait("." + postXpath, groupFeedElement)
         count = 0
         oldPostsLoaded = 0
         while (count < 2) & (len(self.postElements) <= totalPosts):
-            self.postElements = self.find_elems_by_class_name_with_wait(
-                "_4mrt")
+            self.postElements = self.find_elems_by_xpath_with_wait(postXpath)
             ChangeInPostsNo = len(self.postElements) - oldPostsLoaded
             print("Change:", ChangeInPostsNo)
             if ChangeInPostsNo == 0:
