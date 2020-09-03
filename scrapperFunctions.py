@@ -29,6 +29,29 @@ def total_comments_scraped(postId):
         return size
     except:
         return -1
+    
+def scraped_reaction_id():
+    try:
+        mydb = db()
+        whereCondn = "1"
+        reactionIds, size = mydb.select(
+            "fb_group_posts_reactions", "Reaction ID", whereCondn)
+        mydb.closeCursor()
+        return np.array(reactionIds)[:, 0]
+    except:
+        return []
+
+
+def total_reactions_scraped(postId):
+    try:
+        mydb = db()
+        whereCondn = " `Facebook Post ID` = " + "'"+postId+"'"
+        postIds, size = mydb.select(
+            "fb_group_posts_reactions", "Reaction ID", whereCondn)
+        mydb.closeCursor()
+        return size
+    except:
+        return -1
 
 
 def scraped_member_ids():
@@ -40,6 +63,7 @@ def scraped_member_ids():
         mydb.closeCursor()
     except:
         return []
+
 
 def scraped_post_ids():
     try:
@@ -70,8 +94,10 @@ def convert_to_timestamp(dateTimeString, year = ""):
     dateTime = dateTime.timestamp()
     return dateTime
 
-def generate_id(timestamp,posted_by,content):
-    strHash = str(timestamp) + "&" + posted_by + "&" + content
+def generate_id(*argv):
+    strHash = ""
+    for arg in argv:
+        strHash += str(arg) + "&"
     hashId = hashlib.md5(strHash.encode()) 
     return hashId.hexdigest()
 
