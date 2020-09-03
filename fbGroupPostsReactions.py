@@ -28,7 +28,7 @@ class fb_group_posts_reactions(scrapperFunctions):
             "_3dlf", postElement)
         liked_by = []
         if reaction_element != None:
-            self.ScrollToElement(reaction_element)
+            self.scroll_to_element(reaction_element)
             reaction_element.click()
 
             liked_by_elements = self.find_elems_by_class_name_with_wait(
@@ -51,7 +51,7 @@ class fb_group_posts_reactions(scrapperFunctions):
         post_id = self.post_id(postElement)
         # try:
         mydb = db()
-        self.MoveToElement(postElement)
+        self.move_to_element(postElement)
 
         scraped_date_time = self.curr_date_time()
         liked_by = self.scrape_post_reactions(postElement)

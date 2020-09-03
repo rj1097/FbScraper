@@ -13,10 +13,6 @@ class fb_group_post_comments(scrapperFunctions):
     def __init__(self, fbObject):
         self.driver = fbObject.driver
 
-    def post_id(self, postElement):
-        # return postElement.get_attribute('id')
-        return get_random_string(15)
-
     def comment_by(self, commentElement):
         commentByIdElement = self.find_elem_by_xpath_with_wait("." + commentByIdElementXpath, commentElement)
         # if commentByNameElement == None:
@@ -43,18 +39,18 @@ class fb_group_post_comments(scrapperFunctions):
         return commentByName
 
     def comment_timestamp(self, commentElement, year):
-        self.ScrollToElement(commentElement)
+        self.scroll_to_element(commentElement)
         count = 0
         commentTime = ""
         while(1):
             try:
-                self.ScrollToElement(commentElement)
+                self.scroll_to_element(commentElement)
                 timestampElement = self.find_elem_by_xpath_with_wait("." + commentTimestampXpath, commentElement)
-                self.MoveToElement(timestampElement)
+                self.move_to_element(timestampElement)
                 try:
-                    commentTimeElement = self.find_elem_by_xpath_with_wait("." + tooltipXpath)
+                    commentTimeElement = self.find_elem_by_xpath_with_wait("." + toolTipXpath)
                 except: 
-                    commentTimeElement = self.find_elem_by_xpath_with_wait(tooltipXpath)
+                    commentTimeElement = self.find_elem_by_xpath_with_wait(toolTipXpath)
                 # print(commentTimeElement.text)
                 commentTime = commentTimeElement.text
                 break
@@ -95,29 +91,29 @@ class fb_group_post_comments(scrapperFunctions):
         except:
             return -1
 
-    def totalCommentsInPost(self, postElement):
-        commentNoElement = self.find_elem_by_xpath_with_wait("." + commentNoELementXpath, postElement)
+    def total_comments_in_post(self, postElement):
+        commentNoElement = self.find_elem_by_xpath_with_wait("." + commentNoElementXpath, postElement)
         # print("Total Comments:", commentNoElement.text)
         # try:
         return int(commentNoElement.text.split(" comment")[0])
         # except:
         #     return -1
 
-    def selectMostRecentElement(self, postElement):
-        self.ScrollToElement(postElement)
+    def select_most_recent_element(self, postElement):
+        self.scroll_to_element(postElement)
         try:
             mostRelevantElement = self.find_elem_by_xpath_with_wait("."+mostRelevantElementXpath, postElement)
             # mostRelevantElement = postElement.find_element_by_xpath(mostRelevantElementXpath)
             # sleep_time = 2
             # while(mostRelevantElement.text != "Most recent"):
             # print(mostRelevantElement.text)
-            # self.ScrollToElement(mostRelevantElement)
+            # self.scroll_to_element(mostRelevantElement)
             mostRelevantElement.click()
             # sleep(sleep_time)
             # sleep_time *= 2
 
             newestElement = self.find_elems_by_xpath_with_wait(relevancyPopupXpath)[-1]
-            # self.ScrollToElement(newestElement)
+            # self.scroll_to_element(newestElement)
             newestElement.click()
 
             mostRelevantElement = self.find_elem_by_xpath_with_wait("."+mostRelevantElementXpath, postElement)
@@ -127,7 +123,7 @@ class fb_group_post_comments(scrapperFunctions):
             print("No Relevancy Factor !!!")
 
 
-    def loadAllComments(self, postElement):
+    def load_all_comments(self, postElement):
         loadMoreElement = self.find_elems_by_xpath_with_wait("."+loadMoreElementXpath, postElement)
         seeMoreElement = self.find_elems_by_xpath_with_wait("."+seeMoreElementXpath, postElement)
         # loadMoreButtonElement = self.find_elem_by_xpath_with_wait("_4sxc",loadMoreElement[0])
@@ -147,14 +143,14 @@ class fb_group_post_comments(scrapperFunctions):
 
             for load in loadMoreElement:    
                 try:
-                    self.ScrollToElement(load)
+                    self.scroll_to_element(load)
                     load.click()
                 except:
                     continue
 
             for more in seeMoreElement:
                 try:
-                    self.ScrollToElement(more)
+                    self.scroll_to_element(more)
                     more.click()
                 except:
                     continue
@@ -162,23 +158,23 @@ class fb_group_post_comments(scrapperFunctions):
             loadMoreElement = self.find_elems_by_xpath_with_wait("."+loadMoreElementXpath, postElement)
             seeMoreElement = self.find_elems_by_xpath_with_wait("."+seeMoreElementXpath, postElement)
 
-    def loadComments(self, postElement, postId, year = 2020):
+    def scrape_comments(self, postElement, postId, year = 2020):
         mydb = db()
-        self.ScrollToElement(postElement)
+        self.scroll_to_element(postElement)
         year = 2020
-        total_comments_in_post = self.totalCommentsInPost(postElement)
+        total_comments_in_post = self.total_comments_in_post(postElement)
         if(total_comments_in_post != -1):
-            self.selectMostRecentElement(postElement)
+            self.select_most_recent_element(postElement)
             # postId = self.post_id(postElement)
-            # total_comments_scraped = totalCommentsScraped(postId)
+            # total_comments_scraped = total_comments_scraped(postId)
             total_comments_scraped = 0
             print("Total Comments scraped :", total_comments_scraped)
             print("Total Comments :", total_comments_in_post)
             if(total_comments_in_post > total_comments_scraped):
-                self.loadAllComments(postElement)
+                self.load_all_comments(postElement)
                 commentElements = self.find_elems_by_xpath_with_wait("." + commentElementXpath, postElement)
-                commentIds = []#scrapedCommentsId()
-                memberIds = []#list(scrapedMembersId())
+                commentIds = []#scraped_comment_ids()
+                memberIds = []#list(scraped_member_ids())
                 print("Scraping comments")
                 # for cIdx in tqdm(range(len(commentElements))):
                 parentCommentDict = {}
@@ -188,7 +184,7 @@ class fb_group_post_comments(scrapperFunctions):
                     commentBy = self.comment_by(comment)
                     commentTimestamp = self.comment_timestamp(comment, year)
                     commentContent = self.comment_content(comment)
-                    commentId = generateId(commentTimestamp, commentBy, commentContent)
+                    commentId = generate_id(commentTimestamp, commentBy, commentContent)
 
                     print("CommentId :",commentId)
                     if commentId not in commentIds:
@@ -209,7 +205,7 @@ class fb_group_post_comments(scrapperFunctions):
                                     parentCommentBy = self.comment_by(commentElements[pCIdx])
                                     parentCommentTimestamp = str(self.comment_timestamp(commentElements[pCIdx],year))
                                     parentCommentContent = self.comment_content(commentElements[pCIdx])
-                                    parentCommentId = generateId(parentCommentTimestamp, parentCommentBy, parentCommentContent)
+                                    parentCommentId = generate_id(parentCommentTimestamp, parentCommentBy, parentCommentContent)
                                     
                                 except:
                                     parentCommentId = "NotFound"+"#"+postId
@@ -241,42 +237,9 @@ class fb_group_post_comments(scrapperFunctions):
         
 
 
-def scrapedCommentsId():
-    try:
-        mydb = db()
-        whereCondn = "1"
-        commentIds, size = mydb.select(
-            "fb_group_post_comments", "Comment ID", whereCondn)
-        return np.array(commentIds)[:, 0]
-        mydb.closeCursor()
-    except:
-        return []
-
-
-def totalCommentsScraped(postId):
-    try:
-        mydb = db()
-        whereCondn = " `Comment Post ID` = " + "'"+postId+"'"
-        postIds, size = mydb.select(
-            "fb_group_post_comments", "Comment ID", whereCondn)
-        mydb.closeCursor()
-        return size
-    except:
-        return -1
-
-
-def scrapedMembersId():
-    try:
-        mydb = db()
-        whereCondn = "1"
-        postIds, size = mydb.select("fb_group_name", "User ID", whereCondn)
-        return list(np.array(postIds)[:, 0])
-        mydb.closeCursor()
-    except:
-        return []
 
 # if __name__ == "__main__":
 #     fb = fb_login()
 #     fbComments = fb_group_post_comments(fb)
 #     for postElem in fb.postElements:
-#         loadComments(postElem)
+#         scrape_comments(postElem)

@@ -5,8 +5,53 @@ from selenium import webdriver
 from datetime import datetime, date, timedelta
 import hashlib
 import time
+from dbConnect import db
 
-def convert_to_timestamp(dateTimeString, year):
+def scraped_comment_ids():
+    try:
+        mydb = db()
+        whereCondn = "1"
+        commentIds, size = mydb.select(
+            "fb_group_post_comments", "Comment ID", whereCondn)
+        return np.array(commentIds)[:, 0]
+        mydb.closeCursor()
+    except:
+        return []
+
+
+def total_comments_scraped(postId):
+    try:
+        mydb = db()
+        whereCondn = " `Comment Post ID` = " + "'"+postId+"'"
+        postIds, size = mydb.select(
+            "fb_group_post_comments", "Comment ID", whereCondn)
+        mydb.closeCursor()
+        return size
+    except:
+        return -1
+
+
+def scraped_member_ids():
+    try:
+        mydb = db()
+        whereCondn = "1"
+        postIds, size = mydb.select("fb_group_name", "User ID", whereCondn)
+        return list(np.array(postIds)[:, 0])
+        mydb.closeCursor()
+    except:
+        return []
+
+def scraped_post_ids():
+    try:
+        mydb = db()
+        whereCondn = "1"
+        postIds, size = mydb.select(
+            "fb_group_posts", "Facebook Post ID", whereCondn)
+        return np.array(postIds)[:, 0]
+    except:
+        return []
+        
+def convert_to_timestamp(dateTimeString, year = ""):
     year = str(year)
     if("today" in dateTimeString.lower() or "yesterday" in dateTimeString.lower()):
         if "yesterday" in dateTimeString.lower():
@@ -25,20 +70,13 @@ def convert_to_timestamp(dateTimeString, year):
     dateTime = dateTime.timestamp()
     return dateTime
 
-def get_random_string(length):
-    # put your letters in the following string
-    sample_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    result_str = ''.join((random.choice(sample_letters) for i in range(length)))
-    print("Random string is:", result_str)
-    return result_str
-
-def generateId(timestamp,posted_by,content):
+def generate_id(timestamp,posted_by,content):
     strHash = str(timestamp) + "&" + posted_by + "&" + content
     hashId = hashlib.md5(strHash.encode()) 
     return hashId.hexdigest()
 
 class scrapperFunctions:
-    def MoveToElement(self, elem,element = None):
+    def move_to_element(self, elem,element = None):
         if(element == None):
             element = self.driver
         action = webdriver.common.action_chains.ActionChains(element)
@@ -46,7 +84,7 @@ class scrapperFunctions:
         # element.click()
         action.perform()
 
-    def ScrollToElement(self, elem,element = None):
+    def scroll_to_element(self, elem,element = None):
         if(element == None):
             element = self.driver
         x = elem.location['x']
@@ -54,7 +92,7 @@ class scrapperFunctions:
 
         element.execute_script("window.scrollTo("+str(x)+","+str(y)+");")
 
-    def find_elem_by_id_with_wait(self, elem_id, element=None, timeout=10):
+    def find_elem_by_id_with_wait(self, elem_id, element=None, timeout=1):
         if(element == None):
             element = self.driver
         try:
@@ -64,7 +102,7 @@ class scrapperFunctions:
         except:
             return None
 
-    def find_elem_by_link_text_with_wait(self, elem_id, element=None, timeout=10):
+    def find_elem_by_link_text_with_wait(self, elem_id, element=None, timeout=1):
         if(element == None):
             element = self.driver
         try:
@@ -92,7 +130,7 @@ class scrapperFunctions:
         except:
             return None
 
-    def find_elem_by_class_name_with_wait(self, class_name, element=None, timeout=10):
+    def find_elem_by_class_name_with_wait(self, class_name, element=None, timeout=1):
         if(element == None):
             element = self.driver
         try:
@@ -102,7 +140,7 @@ class scrapperFunctions:
         except:
             return None
 
-    def find_elems_by_class_name_with_wait(self, class_name, element=None, timeout=10):
+    def find_elems_by_class_name_with_wait(self, class_name, element=None, timeout=1):
         if(element == None):
             element = self.driver
         try:
@@ -112,7 +150,7 @@ class scrapperFunctions:
         except:
             return []
     
-    def find_elem_by_xpath_with_wait(self, xpath, element=None, timeout=10):
+    def find_elem_by_xpath_with_wait(self, xpath, element=None, timeout=1):
         if(element == None):
             element = self.driver
         try:
@@ -122,7 +160,7 @@ class scrapperFunctions:
         except:
             return None
 
-    def find_elems_by_xpath_with_wait(self, x_path, element=None, timeout=10):
+    def find_elems_by_xpath_with_wait(self, x_path, element=None, timeout=1):
         if(element == None):
             element = self.driver
         try:
