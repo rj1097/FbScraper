@@ -6,6 +6,7 @@ from datetime import datetime, date, timedelta
 import hashlib
 import time
 from dbConnect import db
+from dateparser import parse
 
 def scraped_comment_ids():
     try:
@@ -76,21 +77,28 @@ def scraped_post_ids():
         return []
         
 def convert_to_timestamp(dateTimeString, year = ""):
-    year = str(year)
-    if("today" in dateTimeString.lower() or "yesterday" in dateTimeString.lower()):
-        if "yesterday" in dateTimeString.lower():
-            dateTimeString = dateTimeString.lower().replace("yesterday",(date.today() - timedelta(1)).strftime('%A, %d %B %Y'))
-        else:
-            dateTimeString = dateTimeString.lower().replace("today",date.today().strftime('%A, %d %B %Y'))
+    # if("today" in dateTimeString.lower() or "yesterday" in dateTimeString.lower()):
+    #     if "yesterday" in dateTimeString.lower():
+    #         dateTimeString = dateTimeString.lower().replace("yesterday",(date.today() - timedelta(1)).strftime('%A, %d %B %Y'))
+    #     else:
+    #         dateTimeString = dateTimeString.lower().replace("today",date.today().strftime('%A, %d %B %Y'))
 
-    try:
-        dateTime = datetime.strptime(dateTimeString,'%A, %d %B %Y at %H:%M')
-    except:
-        try:
-            dateTime = datetime.strptime(dateTimeString,'%d %B %Y at %H:%M')
-        except:
-            dateTimeString = dateTimeString.replace("at", year + " at")
-            dateTime = datetime.strptime(dateTimeString,'%d %B %Y at %H:%M')
+    # try:
+    #     dateTime = datetime.strptime(dateTimeString,'%A, %d %B %Y at %H:%M')
+    # except:
+    #     try:
+    #         dateTime = datetime.strptime(dateTimeString,'%d %B %Y at %H:%M')
+    #     except:
+    #         dateTimeString = dateTimeString.replace("at", year + " at")
+    #         try: 
+    #             dateTime = datetime.strptime(dateTimeString,'%d %B %Y at %H:%M')
+    #         except:
+    #             dateTimeString += " " + year
+    #             dateTime = datetime.strptime(dateTimeString,'%d %B %Y')
+    dateTime = parse(dateTimeString)
+    if(year != ""):
+        yr = int(year)
+        dateTime.replace(year=yr)
     dateTime = dateTime.timestamp()
     return dateTime
 

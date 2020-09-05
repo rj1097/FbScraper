@@ -1,5 +1,5 @@
 from fbLogin import *
-from config import *
+from xpaths import *
 from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime, date, timedelta
@@ -19,15 +19,18 @@ class fb_group_post_comments(scrapperFunctions):
         #     commentByNameElement = self.find_elem_by_xpath_with_wait(commentByNameElementXpath2, commentElement)
 
         # commentByLink = self.find_elem_by_xpath_with_wait("_5pb8",commentByNameElement).get_property("href")
-        href = commentByIdElement.get_attribute("href")
-        href = href.strip("https://www.facebook.com/")
-        commentById = ""
-        if "?id=" in href:
-            commentById = href.split("?id=")[1].split("&")[0]
-        else:
-            commentById = href.split("?")[0]
-        # commentBy = commentByNameElement.get_attribute("data-hovercard").split("=")[1].split("&")[0]
-        return commentById
+        try:
+            href = commentByIdElement.get_attribute("href")
+            href = href.strip("https://www.facebook.com/")
+            commentById = ""
+            if "?id=" in href:
+                commentById = href.split("?id=")[1].split("&")[0]
+            else:
+                commentById = href.split("?")[0]
+            # commentBy = commentByNameElement.get_attribute("data-hovercard").split("=")[1].split("&")[0]
+            return commentById
+        except:
+            return ""
 
     def comment_by_name(self, commentElement):
         commentByNameElement = self.find_elem_by_xpath_with_wait("." + commentByNameElementXpath, commentElement)
@@ -38,11 +41,11 @@ class fb_group_post_comments(scrapperFunctions):
         commentByName = commentByNameElement.text
         return commentByName
 
-    def comment_timestamp(self, commentElement, year):
+    def comment_timestamp(self, commentElement, yr):
         self.scroll_to_element(commentElement)
         count = 0
         commentTime = ""
-        while(1):
+        while(count < 5):
             try:
                 self.scroll_to_element(commentElement)
                 timestampElement = self.find_elem_by_xpath_with_wait("." + commentTimestampXpath, commentElement)
@@ -53,13 +56,18 @@ class fb_group_post_comments(scrapperFunctions):
                     commentTimeElement = self.find_elem_by_xpath_with_wait(toolTipXpath)
                 # print(commentTimeElement.text)
                 commentTime = commentTimeElement.text
+                dateTime = parse(commentTime)
+                dateTime.replace(year=int(yr))
+                dateTime = dateTime.timestamp()
                 break
             except:
-                # time.sleep(1)
+                time.sleep(1 * count)
                 count += 1
-                # print("Retry #",count)
-
-        dateTime = int(convert_to_timestamp(commentTime, year))
+                webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            #     # print("Retry #",count)
+        if(count >= 5):
+            raise
+        # dateTime = int(convert_to_timestamp(commentTime, year))
         return dateTime
 
     # def comment_timestamp(self, postElement, commentIdx):
@@ -94,10 +102,10 @@ class fb_group_post_comments(scrapperFunctions):
     def total_comments_in_post(self, postElement):
         commentNoElement = self.find_elem_by_xpath_with_wait("." + commentNoElementXpath, postElement)
         # print("Total Comments:", commentNoElement.text)
-        # try:
-        return int(commentNoElement.text.split(" comment")[0])
-        # except:
-        #     return -1
+        try:
+            return int(commentNoElement.text.split(" comment")[0])
+        except:
+            return -1
 
     def select_most_recent_element(self, postElement):
         self.scroll_to_element(postElement)
@@ -139,7 +147,8 @@ class fb_group_post_comments(scrapperFunctions):
                 if "hide" in loadType:
                     break
             except:
-                print("")
+                # print("")
+                temp = 1
 
             for load in loadMoreElement:    
                 try:
@@ -159,9 +168,9 @@ class fb_group_post_comments(scrapperFunctions):
             seeMoreElement = self.find_elems_by_xpath_with_wait("."+seeMoreElementXpath, postElement)
 
     def scrape_comments(self, postElement, postId, year = 2020):
+        webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
         mydb = db()
         self.scroll_to_element(postElement)
-        year = 2020
         total_comments_in_post = self.total_comments_in_post(postElement)
         if(total_comments_in_post != -1):
             self.select_most_recent_element(postElement)
@@ -178,7 +187,7 @@ class fb_group_post_comments(scrapperFunctions):
                 print("Scraping comments")
                 # for cIdx in tqdm(range(len(commentElements))):
                 parentCommentDict = {}
-                for cIdx in (range(len(commentElements))):
+                for cIdx in tqdm(range(len(commentElements))):
                     comment = commentElements[cIdx]
                     # print(comment.text)
                     commentBy = self.comment_by(comment)
@@ -186,7 +195,7 @@ class fb_group_post_comments(scrapperFunctions):
                     commentContent = self.comment_content(comment)
                     commentId = generate_id(commentTimestamp, commentBy, commentContent)
 
-                    print("CommentId :",commentId)
+                    # print("CommentId :",commentId)
                     if commentId not in commentIds:
                         commentLabel = comment.get_attribute("aria-label").lower()
                         if("reply" not in commentLabel):
@@ -220,16 +229,16 @@ class fb_group_post_comments(scrapperFunctions):
                             name = self.comment_by_name(comment)
                             mem_data = [str(commentBy), str(name)]
                             # mydb.insert(mem_data, "fb_group_name")
-                            print("New member")
-                            print(mem_data)
+                            # print("New member")
+                            # print(mem_data)
                         # commentContent = self.comment_content(comment)
 
                         commentParam = [commentId, postId, commentDateTime,
                                         isReply, parentCommentId, commentBy, commentContent]
-                        print(commentParam)
+                        # print(commentParam)
                         # mydb.insert(commentParam, "fb_group_post_comments")
                 # mydb.closeCursor()
-                    print("####################################################################")
+                    # print("####################################################################")
             else:
                 print("No new comments !!")
         else:

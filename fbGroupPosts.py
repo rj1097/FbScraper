@@ -1,5 +1,5 @@
 from fbLogin import *
-from config import *
+from xpaths import *
 from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
@@ -33,29 +33,48 @@ class fb_group_posts(scrapperFunctions):
         self.scroll_to_element(postHeaderElement)
         count = 0
         postTime = ""
-        while(1):
+        while(count < 5):
             try:
                 self.scroll_to_element(postHeaderElement)
                 timestampElement = self.find_elem_by_xpath_with_wait("." + postTimestampXpath, postHeaderElement)
                 self.move_to_element(timestampElement)
                 try:
-                    postTimeElement = self.find_elem_by_xpath_with_wait("." + toolTipXpath)
+                    postTimeElements = self.find_elems_by_xpath_with_wait("." + toolTipXpath)
                 except: 
-                    postTimeElement = self.find_elem_by_xpath_with_wait(toolTipXpath)
-                # print(postTimeElement.text)
-                postTime = postTimeElement.text
-                break
-            except:
-                # time.sleep(1)
-                count += 1
-                # print("Retry #",count)
+                    postTimeElements = self.find_elems_by_xpath_with_wait(toolTipXpath)
 
-        dateTime = int(convert_to_timestamp(postTime))
-        return dateTime
+                # print(postTimeElement.text)
+                # if len(postTimeElements) == 0:
+                #     raise
+                for timeElement in postTimeElements:
+                    try:
+                        postTime = timeElement.text
+                        # print(postTime)
+                        dateTime = parse(postTime)
+                        dateTimestamp = dateTime.timestamp()
+                        break
+                    except Exception as e:
+                        print(str(e))
+                # print(dateTimestamp)
+                temp = dateTimestamp + 1
+                break
+            except Exception as e:
+                # print(str(e))
+                time.sleep(1*count)
+                count += 1
+                webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+                # print("Retry #",count)
+        if(count >= 5):
+            raise
+        # print(count)
+        # dateTime = int(convert_to_timestamp(postTime))
+        # print(dateTime)
+        self.postTimestamp = dateTimestamp
+        return dateTimestamp
 
     def posted_at(self, postHeaderElement):
         try:
-            timestamp = int(self.post_timestamp(postHeaderElement))
+            timestamp = int(self.postTimestamp)
         except:
             timestamp = 0
         return datetime.fromtimestamp(timestamp).isoformat()
@@ -135,6 +154,7 @@ class fb_group_posts(scrapperFunctions):
         return Posttype[0]
 
     def scrape_posts(self, postElement):
+        webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
         self.scroll_to_element(postElement)
         self.click_see_more(postElement)
         postIds = scraped_post_ids()

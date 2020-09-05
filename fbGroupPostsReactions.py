@@ -1,5 +1,5 @@
 from fbLogin import *
-from config import *
+from xpaths import *
 from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
@@ -26,8 +26,10 @@ class fb_group_posts_reactions(scrapperFunctions):
         profileElements = self.find_elems_by_xpath_with_wait("." + reactionFrameProfileXpath, reactionFrameElement)
         changeInPostNo = 1
         tries = 0
-        while(changeInPostNo != 0 or tries < 5):
+        while(changeInPostNo != 0 or tries < 3):
             totalProfiles = len(profileElements)
+            if(totalProfiles == self.totalReactions):
+                break
             try:
                 self.driver.execute_script("arguments[0].scrollIntoView();", profileElements[-1])
             except:
@@ -37,7 +39,7 @@ class fb_group_posts_reactions(scrapperFunctions):
             if(changeInPostNo == 0):
                 tries += 1
                 time.sleep(tries * 1)
-                print("Total Reactions :",len(profileElements))
+                # print("Total Reactions :",len(profileElements))
             else:
                 tries = 0
         return profileElements
@@ -50,7 +52,8 @@ class fb_group_posts_reactions(scrapperFunctions):
             if reaction_element != None:
                 self.scroll_to_element(reaction_element)
                 reaction_element.click()
-
+                print(reaction_element.text)
+                self.totalReactions = int(reaction_element.text)
                 reactionFrameElement = self.find_elem_by_xpath_with_wait("." + reactionFrameXpath)
                 profileElements = self.load_profiles(reactionFrameElement)
                 count = 0
@@ -69,7 +72,8 @@ class fb_group_posts_reactions(scrapperFunctions):
                             By = href.split("?")[0]
                         likedBy.append([By, name])
                     except:
-                        print("Invalid Profile")
+                        # print("Invalid Profile")
+                        temp = 1
                     # likedBy.append("Invalid Id")
                 webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
             return likedBy
@@ -78,31 +82,32 @@ class fb_group_posts_reactions(scrapperFunctions):
             if(tries > 3):
                 return []
             else:
-                load_post_reactions(reactionPane, tries)
+                self.load_post_reactions(reactionPane, tries)
 
     def scrape_post_reactions(self, postElement, postId):
-        try:
+        # try:
             # mydb = db()
-            self.scroll_to_element(postElement)
+        webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+        self.scroll_to_element(postElement)
 
-            scrapedDateTime = self.curr_date_time()
-            reactionPaneElement = self.find_elem_by_xpath_with_wait("." + postReactionPaneXpath,postElement)
-            likedBy = self.load_post_reactions(postElement)
-            scrapedId = scraped_reaction_id()
-            memberIds = scraped_members_id()
-            print("Scraping Reactions")
-            print(likedBy)
-            for pIdx in tqdm(range(len(likedBy))):
-                profile = likedBy[pIdx]
-                reactionId = generate_id(profile[0],postId)
-                if(reactionId not in scrapedId):
-                    if(profile[0] not in memberIds):
-                        memberIds.append(profile[0])
-                        # mydb.insert(profile, "fb_group_name")
-                    reactionParam = [reactionId, postId,scrapedDateTime, profile[0]]
-                    print(reactionParam)
-                    # mydb.insert(reactionParam, "fb_group_posts_reactions")
-            # mydb.closeCursor()
-        except:
-            print("No reaction ",postId)
+        scrapedDateTime = self.curr_date_time()
+        reactionPaneElement = self.find_elem_by_xpath_with_wait("." + postReactionPaneXpath,postElement)
+        likedBy = self.load_post_reactions(postElement)
+        scrapedId = scraped_reaction_id()
+        memberIds = [] #scraped_members_id()
+        print("Scraping Reactions")
+        # print(likedBy)
+        for pIdx in tqdm(range(len(likedBy))):
+            profile = likedBy[pIdx]
+            reactionId = generate_id(profile[0],postId)
+            if(reactionId not in scrapedId):
+                if(profile[0] not in memberIds):
+                    memberIds.append(profile[0])
+                    # mydb.insert(profile, "fb_group_name")
+                reactionParam = [reactionId, postId,scrapedDateTime, profile[0]]
+                # print(reactionParam)
+                # mydb.insert(reactionParam, "fb_group_posts_reactions")
+        # mydb.closeCursor()
+        # except:
+        #     print("No reaction ",postId)
 

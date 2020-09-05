@@ -1,4 +1,5 @@
-from config import driverPath, fbId, fbPasswd, fbGroupLink, totalPosts, postXpath, groupFeedXpath
+from config import driverPath, fbId, fbPasswd, fbGroupLink, totalPosts
+from xpaths import postXpath, groupFeedXpath
 # from dbConnect import
 from scrapperFunctions import *
 from time import sleep
@@ -9,7 +10,7 @@ class fb_login(scrapperFunctions):
         self.loadFb()
         sleep(5)
         self.visitGroup()
-        # self.LoadGroup()
+        self.LoadGroup()
 
     def loadFb(self):
         chrome_options = webdriver.ChromeOptions()
@@ -18,7 +19,7 @@ class fb_login(scrapperFunctions):
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument("--disable-notifications")
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(
             "E:\\FbScraper\\chromedriver.exe", options=chrome_options)
         self.login()

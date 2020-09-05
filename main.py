@@ -11,16 +11,16 @@ if __name__ == "__main__":
     fbComments = fb_group_post_comments(fb)
     attempt = 0
     problematic_posts = []
-    for post in fb.postElements:
-        try:
-            print("###############################################################")
-            print("Post No. :", count)
-            fbPosts.load_posts(post)
-            fbComments.loadComments(post)
-            fbReaction.load_post_reactions(post)
-            count += 1
-        except:
-            problematic_posts.append(count-1)
+    for post in fb.postElements[22:]:
+        # try:
+        print("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#")
+        print("Post No. :", count)
+        fbPosts.scrape_posts(post)
+        fbComments.scrape_comments(post, fbPosts.postId, fbPosts.postYear)
+        fbReaction.scrape_post_reactions(post, fbPosts.postId)
+        count += 1
+        # except:
+        #     problematic_posts.append(count-1)
     print(problematic_posts)
     fb.logout()
     fb.driver.close()
