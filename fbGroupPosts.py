@@ -33,11 +33,16 @@ class fb_group_posts(scrapperFunctions):
         self.scroll_to_element(postHeaderElement)
         count = 0
         postTime = ""
-        while(count < 5):
+        while(count < 10):
             try:
                 self.scroll_to_element(postHeaderElement)
-                timestampElement = self.find_elem_by_xpath_with_wait("." + postTimestampXpath, postHeaderElement)
-                self.move_to_element(timestampElement)
+                while(1):
+                    try:
+                        timestampElement = self.find_elem_by_xpath_with_wait("." + postTimestampXpath, postHeaderElement)
+                        self.move_to_element(timestampElement)
+                        break
+                    except Exception as e1:
+                        time.sleep(5)
                 try:
                     postTimeElements = self.find_elems_by_xpath_with_wait("." + toolTipXpath)
                 except: 
@@ -54,19 +59,19 @@ class fb_group_posts(scrapperFunctions):
                         dateTimestamp = dateTime.timestamp()
                         break
                     except Exception as e:
-                        print(str(e))
+                        print("Multiple Tooltip Elements: " + str(e))
                 # print(dateTimestamp)
                 temp = dateTimestamp + 1
                 break
             except Exception as e:
-                # print(str(e))
+                print("Timestamp format Error : " + str(e))
                 time.sleep(1*count)
                 count += 1
                 webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
                 # print("Retry #",count)
-        if(count >= 5):
+        if(count >= 10):
             raise
-        # print(count)
+        print(count)
         # dateTime = int(convert_to_timestamp(postTime))
         # print(dateTime)
         self.postTimestamp = dateTimestamp
@@ -154,6 +159,7 @@ class fb_group_posts(scrapperFunctions):
         return Posttype[0]
 
     def scrape_posts(self, postElement):
+        # print("PostElement Text: "+postElement.text)
         webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
         self.scroll_to_element(postElement)
         self.click_see_more(postElement)
@@ -169,19 +175,19 @@ class fb_group_posts(scrapperFunctions):
         self.postYear = time.split("-")[0]
         
         if(Id not in postIds):
-            memberIds = [] #scraped_member_ids()
-            # mydb = db()
+            memberIds = scraped_member_ids()
+            mydb = db()
             # toInsertMemIds = []
 
             if(by not in memberIds):
                 memberIds.append(by)
                 name = self.posted_by_name(postHeaderElement)
                 mem_data = [by, name]
-                # mydb.insert(mem_data, "fb_group_name")
+                mydb.insert(mem_data, "fb_group_name")
             typePost = self.post_type(postHeaderElement)
             group_id = (fbGroupLink.split("/groups/")[1]).strip('/')
             post_param = [Id, content, time, by, typePost, group_id]
-            # mydb.insert(post_param, "fb_group_posts")
+            mydb.insert(post_param, "fb_group_posts")
             print(post_param)
         else:
             print("Post already scraped")

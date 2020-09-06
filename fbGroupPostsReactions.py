@@ -85,29 +85,29 @@ class fb_group_posts_reactions(scrapperFunctions):
                 self.load_post_reactions(reactionPane, tries)
 
     def scrape_post_reactions(self, postElement, postId):
-        # try:
-            # mydb = db()
-        webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-        self.scroll_to_element(postElement)
+        try:
+            mydb = db()
+            webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            self.scroll_to_element(postElement)
 
-        scrapedDateTime = self.curr_date_time()
-        reactionPaneElement = self.find_elem_by_xpath_with_wait("." + postReactionPaneXpath,postElement)
-        likedBy = self.load_post_reactions(postElement)
-        scrapedId = scraped_reaction_id()
-        memberIds = [] #scraped_members_id()
-        print("Scraping Reactions")
-        # print(likedBy)
-        for pIdx in tqdm(range(len(likedBy))):
-            profile = likedBy[pIdx]
-            reactionId = generate_id(profile[0],postId)
-            if(reactionId not in scrapedId):
-                if(profile[0] not in memberIds):
-                    memberIds.append(profile[0])
-                    # mydb.insert(profile, "fb_group_name")
-                reactionParam = [reactionId, postId,scrapedDateTime, profile[0]]
-                # print(reactionParam)
-                # mydb.insert(reactionParam, "fb_group_posts_reactions")
-        # mydb.closeCursor()
-        # except:
-        #     print("No reaction ",postId)
+            scrapedDateTime = self.curr_date_time()
+            reactionPaneElement = self.find_elem_by_xpath_with_wait("." + postReactionPaneXpath,postElement)
+            likedBy = self.load_post_reactions(postElement)
+            scrapedId = scraped_reaction_id()
+            memberIds = scraped_member_ids()
+            print("Scraping Reactions")
+            # print(likedBy)
+            for pIdx in tqdm(range(len(likedBy))):
+                profile = likedBy[pIdx]
+                reactionId = generate_id(profile[0],postId)
+                if(reactionId not in scrapedId):
+                    if(profile[0] not in memberIds):
+                        memberIds.append(profile[0])
+                        mydb.insert(profile, "fb_group_name")
+                    reactionParam = [reactionId, postId,scrapedDateTime, profile[0]]
+                    # print(reactionParam)
+                    mydb.insert(reactionParam, "fb_group_posts_reactions")
+            mydb.closeCursor()
+        except:
+            print("No reaction ",postId)
 

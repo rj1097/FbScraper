@@ -58,7 +58,7 @@ class fb_login(scrapperFunctions):
             self.driver.execute_script(
                 "window.scrollTo(0, document.body.scrollHeight);")
             sleep(1)
-
+        self.postElements = self.postElements[0:totalPosts]
         print("Totalsposts:", len(self.postElements))
         print("All posts loaded")
 

@@ -207,11 +207,13 @@ class db:
 
             self.dbConnector.commit()
             return 1
-        except Error as e:
+        except Exception as e:
 
-            print("Reconnecting to database !!!")
             # print("Error in dbConnect")
-            # print(e)
+            if "duplicate" in str(e).lower():
+                return 1
+            print(e)
+            # print("Reconnecting to database !!!")
             # print(type(attempt))
             if attempt < 5:
                 self.dbConnect()
