@@ -4,7 +4,8 @@ from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
 import numpy as np
-
+from config import fbGroupLink
+from customlog import *
 
 class fb_group_posts(scrapperFunctions):
     def __init__(self, fbObject):
@@ -18,11 +19,13 @@ class fb_group_posts(scrapperFunctions):
         href = postedById.get_attribute("href")
         href = href.strip("https://www.facebook.com/")
         postedById = ""
-        if "?id=" in href:
+        if "/user/" in href:
+            postedById = href.split("/user/")[1].split("/")[0]
+        elif "?id=" in href:
             postedById = href.split("?id=")[1].split("&")[0]
         else:
             postedById = href.split("?")[0]
-        return postedById
+        return postedById.strip("/")
 
     def posted_by_name(self, postHeaderElement):
         postedByNameElement = self.find_elem_by_xpath_with_wait("." + postedByNameElementXpath, postHeaderElement)
@@ -33,16 +36,18 @@ class fb_group_posts(scrapperFunctions):
         self.scroll_to_element(postHeaderElement)
         count = 0
         postTime = ""
+        count = 1
         while(count < 10):
             try:
                 self.scroll_to_element(postHeaderElement)
-                while(1):
+                while(count < 5):
                     try:
                         timestampElement = self.find_elem_by_xpath_with_wait("." + postTimestampXpath, postHeaderElement)
                         self.move_to_element(timestampElement)
                         break
                     except Exception as e1:
                         time.sleep(5)
+                        count += 1
                 try:
                     postTimeElements = self.find_elems_by_xpath_with_wait("." + toolTipXpath)
                 except: 
@@ -59,19 +64,19 @@ class fb_group_posts(scrapperFunctions):
                         dateTimestamp = dateTime.timestamp()
                         break
                     except Exception as e:
-                        print("Multiple Tooltip Elements: " + str(e))
+                        logging.info("Multiple Tooltip Elements: " + str(e))
                 # print(dateTimestamp)
                 temp = dateTimestamp + 1
                 break
             except Exception as e:
-                print("Timestamp format Error : " + str(e))
+                logging.info("Timestamp format Error : " + str(e))
                 time.sleep(1*count)
                 count += 1
                 webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
                 # print("Retry #",count)
         if(count >= 10):
             raise
-        print(count)
+        logging.info(count)
         # dateTime = int(convert_to_timestamp(postTime))
         # print(dateTime)
         self.postTimestamp = dateTimestamp
@@ -91,7 +96,7 @@ class fb_group_posts(scrapperFunctions):
         try:
             postContent += postContentElement.text
         except:
-            print("No text Content")
+            logging.info("No text Content")
         
         postContent += "----------IMAGE ALT------------"
         try:
@@ -99,7 +104,7 @@ class fb_group_posts(scrapperFunctions):
             for imageElement in postImageElements:
                 postContent += imageElement.text
         except:
-            print("No Image in post")
+            logging.info("No Image in post")
         
         postImageElements = self.find_elems_by_xpath_with_wait(".//img", postElement)
         for image in postImageElements:
@@ -117,7 +122,7 @@ class fb_group_posts(scrapperFunctions):
                 seeMoreElement.click()
             except:
                 # time.sleep(1)
-                print("Some text hidden")
+                logging.info("Some text hidden")
             seeMoreElement = self.find_elem_by_xpath_with_wait("."+seeMoreElementXpath, postElement)
             # seeMoreLink[-1].click()
             # print(postDetails[0].text)
@@ -126,6 +131,7 @@ class fb_group_posts(scrapperFunctions):
         Posttype = []
         query = ["live", "qna", "link", "unit",
                  "event", "pre recorded video", "query"]
+        
         # PostsNo = len(postElements)
         # for i in range(PostsNo):
         # postHeaderElement = self.find_elem_by_xpath_with_wait("."+"_5vra", postElement)
@@ -159,7 +165,7 @@ class fb_group_posts(scrapperFunctions):
         return Posttype[0]
 
     def scrape_posts(self, postElement):
-        # print("PostElement Text: "+postElement.text)
+        logging.info("Post Content: {}".format(postElement.text))
         webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
         self.scroll_to_element(postElement)
         self.click_see_more(postElement)
@@ -169,7 +175,8 @@ class fb_group_posts(scrapperFunctions):
         time = self.posted_at(postHeaderElement)
         by = self.posted_by(postHeaderElement)
         content = self.post_content(postElement)
-        Id = generate_id(timestamp,by,content)
+        groupId = fbGroupLink.split("/")[-1]
+        Id = generate_id(timestamp,by,content,groupId)
 
         self.postId = Id
         self.postYear = time.split("-")[0]
@@ -188,9 +195,9 @@ class fb_group_posts(scrapperFunctions):
             group_id = (fbGroupLink.split("/groups/")[1]).strip('/')
             post_param = [Id, content, time, by, typePost, group_id]
             mydb.insert(post_param, "fb_group_posts")
-            print(post_param)
+            logging.info(post_param)
         else:
-            print("Post already scraped")
+            logging.info("Post already scraped")
         # print("Post Data Loaded")
         # for post_data in post_params:
 

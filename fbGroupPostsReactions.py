@@ -6,7 +6,7 @@ from datetime import datetime
 import numpy as np
 from pytz import timezone
 from tqdm import tqdm
-
+from customlog import *
 
 class fb_group_posts_reactions(scrapperFunctions):
     def __init__(self, fbObject):
@@ -52,8 +52,14 @@ class fb_group_posts_reactions(scrapperFunctions):
             if reaction_element != None:
                 self.scroll_to_element(reaction_element)
                 reaction_element.click()
-                print(reaction_element.text)
-                self.totalReactions = int(reaction_element.text)
+                reactionText = reaction_element.text
+                for term in reactionText.split(" "):
+                    if(term.strip("\n").strip("/").isnumeric()):
+                        self.totalReactions = int(term.strip("\n").strip("/"))
+                        break
+
+                print(self.totalReactions)
+                # self.totalReactions = int(reaction_element.text.split[" "][0])
                 reactionFrameElement = self.find_elem_by_xpath_with_wait("." + reactionFrameXpath)
                 profileElements = self.load_profiles(reactionFrameElement)
                 count = 0
@@ -66,11 +72,13 @@ class fb_group_posts_reactions(scrapperFunctions):
                         href = profile.get_attribute("href")
                         href = href.strip("https://www.facebook.com/")
                         By = ""
-                        if "?id=" in href:
+                        if "/user/" in href:
+                            By = href.split("/user/")[1].split("/")[0]
+                        elif "?id=" in href:
                             By = href.split("?id=")[1].split("&")[0]
                         else:
                             By = href.split("?")[0]
-                        likedBy.append([By, name])
+                        likedBy.append([By.strip("/"), name])
                     except:
                         # print("Invalid Profile")
                         temp = 1

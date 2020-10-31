@@ -3,7 +3,7 @@ from xpaths import postXpath, groupFeedXpath
 # from dbConnect import
 from scrapperFunctions import *
 from time import sleep
-
+from customlog import *
 
 class fb_login(scrapperFunctions):
     def __init__(self):
@@ -59,7 +59,8 @@ class fb_login(scrapperFunctions):
                 "window.scrollTo(0, document.body.scrollHeight);")
             sleep(1)
         self.postElements = self.postElements[0:totalPosts]
-        print("Totalsposts:", len(self.postElements))
+        print("Total posts:", len(self.postElements))
+
         print("All posts loaded")
 
     def logout(self):

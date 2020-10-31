@@ -2,11 +2,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium import webdriver
-from datetime import datetime, date, timedelta
+# from datetime import datetime, date, timedelta
 import hashlib
 import time
 from dbConnect import db
 from dateparser import parse
+from customlog import *
 
 def scraped_comment_ids():
     try:
@@ -23,7 +24,7 @@ def scraped_comment_ids():
 def total_comments_scraped(postId):
     try:
         mydb = db()
-        whereCondn = " `Comment Post ID` = " + "'"+postId+"'"
+        whereCondn = "`Comment Post ID` = " + "'"+postId+"'"
         postIds, size = mydb.select(
             "fb_group_post_comments", "Comment ID", whereCondn)
         mydb.closeCursor()
@@ -103,6 +104,7 @@ def convert_to_timestamp(dateTimeString, year = ""):
     return dateTime
 
 def generate_id(*argv):
+    logging.info("Generating Id")
     strHash = ""
     for arg in argv:
         strHash += str(arg) + "&"

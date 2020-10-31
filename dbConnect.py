@@ -36,7 +36,7 @@ class db:
         try:
             cursor = self.dbConnector.cursor()
             # print("SELECT * FROM " + table + " " + where)
-            cursor.execute("SELECT * FROM " + table + " " + where)
+            cursor.execute("SELECT * FROM " + table + " WHERE " + str(where))
 
             row = cursor.fetchall()
 
@@ -93,7 +93,7 @@ class db:
             else:
                 print(
                     "--------------------------------------------------------------------")
-                print("Unable to insert")
+                print("Unable to select")
                 print(
                     "--------------------------------------------------------------------")
                 return [[], 0]
@@ -118,7 +118,7 @@ class db:
         except Error as e:
             print("Reconnecting to database !!!")
             # print("Error in dbConnect")
-            # print(e)
+            print(e)
             # print(type(attempt))
             if attempt < 5:
                 self.dbConnect()
@@ -144,7 +144,7 @@ class db:
     #         print(e)
 
     # UPDATE `linkedin_Scraper_Profiles` SET `Email` = 'brcgrrsn@protonmail.com' WHERE `linkedin_Scraper_Profiles`.`Email` = 'brcgrrsn@gmail.com';
-    def delete(self, table, where=""):
+    def delete(self, table, where="",attempt=0):
         #print("SELECT * FROM " + table + " " + where)
         try:
             cursor = self.dbConnector.cursor()
@@ -157,11 +157,26 @@ class db:
             return cursor.rowcount
 
         except Error as e:
-            print("Task Incomplete")
+            print("Reconnecting to database !!!")
+            # print("Error in dbConnect")
             # print(e)
+            # print(type(attempt))
+            if attempt < 5:
+                self.dbConnect()
+                # print("DbConnectObject:", self.dbConnector)
+                self.delete(table, where,attempt+1)
+                return 1
+            else:
+                print(
+                    "--------------------------------------------------------------------")
+                print("Unable to insert")
+                print(
+                    "--------------------------------------------------------------------")
+                return 0
 
         else:
             cursor.close()
+            return 1
 
     def closeDb(self):
         cursor = self.dbConnector.cursor()
@@ -211,6 +226,9 @@ class db:
 
             # print("Error in dbConnect")
             if "duplicate" in str(e).lower():
+                print("Row already present !!")
+                # print(values)
+
                 return 1
             print(e)
             # print("Reconnecting to database !!!")

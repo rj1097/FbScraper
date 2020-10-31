@@ -6,6 +6,7 @@ from datetime import datetime, date, timedelta
 import numpy as np
 from tqdm import tqdm
 import time
+from customlog import *
 # import random
 
 
@@ -26,22 +27,28 @@ class fb_group_post_comments(scrapperFunctions):
             if "/user/" in href:
                 commentById = href.split("/user/")[1].split("/")[0]
                 
-            if "?id=" in href:
+            elif "?id=" in href:
                 commentById = href.split("?id=")[1].split("&")[0]
             else:
                 commentById = href.split("?")[0]
             # commentBy = commentByNameElement.get_attribute("data-hovercard").split("=")[1].split("&")[0]
-            return commentById
+            return commentById.strip("/")
         except:
+            logging.warn("commentByIdElementXpath")
             return ""
 
     def comment_by_name(self, commentElement):
-        commentByNameElement = self.find_elem_by_xpath_with_wait("." + commentByNameElementXpath, commentElement)
+        commentByName = ""
+        try:
+            commentByNameElement = self.find_elem_by_xpath_with_wait("." + commentByNameElementXpath, commentElement)
+            commentByName = commentByNameElement.text
+        except:
+            commentByNameElement = self.find_elem_by_xpath_with_wait("." + commentByIdElementXpath, commentElement)
+            commentByName = commentByNameElement.text
         # if commentByNameElement == None:
         #     commentByNameElement = self.find_elem_by_xpath_with_wait(commentByNameElementXpath2, commentElement)
 
         # commentByLink = self.find_elem_by_xpath_with_wait("_5pb8",commentByNameElement).get_property("href")
-        commentByName = commentByNameElement.text
         return commentByName
 
     def comment_timestamp(self, commentElement, yr):
@@ -85,10 +92,18 @@ class fb_group_post_comments(scrapperFunctions):
         return datetime.fromtimestamp(timestamp).isoformat()
 
     def comment_content(self, commentElement):
-        try:
-            return self.find_elem_by_xpath_with_wait("." + commentContentXpath, commentElement).text
-        except:
-            return "INVALID TEXT"
+        # try:
+        commentContentElement = self.find_elem_by_xpath_with_wait("." + commentContentXpath, commentElement)
+        commentContent = ""
+        if commentContentElement != None:
+            commentContent += commentContentElement.text
+        else:
+            commentImgElement = self.find_elem_by_xpath_with_wait(".//img", commentElement)
+            if commentImgElement != None:
+                commentContent += commentImgElement.get_attribute("alt")
+        return commentContent
+        # except:
+            # return "INVALID TEXT"
 
     def find_parent_comment_element(self, comment_elements, cIdx):
         # print(child_comment.text)
@@ -103,29 +118,39 @@ class fb_group_post_comments(scrapperFunctions):
             return -1
 
     def total_comments_in_post(self, postElement):
-        commentNoElement = self.find_elem_by_xpath_with_wait("." + commentNoElementXpath, postElement)
-        # print("Total Comments:", commentNoElement.text)
-        try:
-            return int(commentNoElement.text.split(" comment")[0])
-        except:
-            return -1
+        commentNoElement = self.find_elems_by_xpath_with_wait("." + commentNoElementXpath, postElement)
+        for element in commentNoElement:
+            if "comment" in element.text.lower():
+                print("Total Comments:", element.text)
+                try:
+                    return int(element.text.split(" comment")[0])
+                except:
+                    return -1
+        return -1
 
     def select_most_recent_element(self, postElement):
         self.scroll_to_element(postElement)
         try:
             mostRelevantElement = self.find_elem_by_xpath_with_wait("."+mostRelevantElementXpath, postElement)
-            # mostRelevantElement = postElement.find_element_by_xpath(mostRelevantElementXpath)
-            # sleep_time = 2
-            # while(mostRelevantElement.text != "Most recent"):
-            # print(mostRelevantElement.text)
-            # self.scroll_to_element(mostRelevantElement)
+        # mostRelevantElement = postElement.find_element_by_xpath(mostRelevantElementXpath)
+        # sleep_time = 2
+        # while(mostRelevantElement.text != "Most recent"):
+        # print(mostRelevantElement.text)
+        # self.scroll_to_element(mostRelevantElement)
             mostRelevantElement.click()
-            # sleep(sleep_time)
-            # sleep_time *= 2
-
-            newestElement = self.find_elems_by_xpath_with_wait(relevancyPopupXpath)[-1]
-            # self.scroll_to_element(newestElement)
-            newestElement.click()
+        # sleep(sleep_time)
+        # sleep_time *= 2
+            count = 0
+            while(count < 5):
+                try:
+                    newestElement = self.find_elems_by_xpath_with_wait(relevancyPopupXpath)[-1]
+                    self.scroll_to_element(newestElement)
+                    newestElement.click()
+                    break
+                except:
+                    print("Retrying")
+                    time.sleep(count*1)
+                    count += 1
 
             mostRelevantElement = self.find_elem_by_xpath_with_wait("."+mostRelevantElementXpath, postElement)
             mostRelevantElement = "Most Relevant"   
@@ -179,10 +204,10 @@ class fb_group_post_comments(scrapperFunctions):
             self.select_most_recent_element(postElement)
             # postId = self.post_id(postElement)
             # total_comments_scraped = total_comments_scraped(postId)
-            total_comments_scraped = 0
-            print("Total Comments scraped :", total_comments_scraped)
-            print("Total Comments :", total_comments_in_post)
-            if(total_comments_in_post > total_comments_scraped):
+            scrapedCommentsTotal = total_comments_scraped(postId)
+            print("Total Comments scraped :", scrapedCommentsTotal)
+            # print("Total Comments :", total_comments_in_post)
+            if(total_comments_in_post > scrapedCommentsTotal):
                 self.load_all_comments(postElement)
                 commentElements = self.find_elems_by_xpath_with_wait("." + commentElementXpath, postElement)
                 commentIds = scraped_comment_ids()
