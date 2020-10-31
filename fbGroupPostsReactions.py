@@ -1,12 +1,12 @@
 from fbLogin import *
-from config import *
+from xpaths import *
 from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
 import numpy as np
 from pytz import timezone
 from tqdm import tqdm
-
+from customlog import *
 
 class fb_group_posts_reactions(scrapperFunctions):
     def __init__(self, fbObject):
@@ -22,88 +22,100 @@ class fb_group_posts_reactions(scrapperFunctions):
         curr_timestamp = self.timestamp()
         return datetime.fromtimestamp(curr_timestamp).isoformat()
 
-    def scrape_post_reactions(self, postElement):
-        webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-        reaction_element = self.find_elem_by_class_name_with_wait(
-            "_3dlf", postElement)
-        liked_by = []
-        if reaction_element != None:
-            self.ScrollToElement(reaction_element)
-            reaction_element.click()
+    def load_profiles(self,reactionFrameElement):
+        profileElements = self.find_elems_by_xpath_with_wait("." + reactionFrameProfileXpath, reactionFrameElement)
+        changeInPostNo = 1
+        tries = 0
+        while(changeInPostNo != 0 or tries < 3):
+            totalProfiles = len(profileElements)
+            if(totalProfiles == self.totalReactions):
+                break
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView();", profileElements[-1])
+            except:
+                print("Stale Element Exception")
+            profileElements = self.find_elems_by_xpath_with_wait("." + reactionFrameProfileXpath, reactionFrameElement)
+            changeInPostNo = len(profileElements) - totalProfiles
+            if(changeInPostNo == 0):
+                tries += 1
+                time.sleep(tries * 1)
+                # print("Total Reactions :",len(profileElements))
+            else:
+                tries = 0
+        return profileElements
 
-            liked_by_elements = self.find_elems_by_class_name_with_wait(
-                "_5j0e")
-            count = 0
-            for element in liked_by_elements:
-                # print(count)
-                count += 1
-                profile = element.find_element_by_css_selector("a")
-                by = profile.get_attribute(
-                    "data-hovercard").split("=")[1].split("&")[0]
-                name = profile.get_attribute("title")
-                liked_by.append([by, name])
-                # liked_by.append("Invalid Id")
-            webdriver.ActionChains(self.driver).send_keys(
-                Keys.ESCAPE).perform()
-        return liked_by
+    def load_post_reactions(self, reactionPane, tries = 0):
+        try:
+            webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            reaction_element = self.find_elem_by_xpath_with_wait("." + postReactionsElementXpath, reactionPane)
+            likedBy = []
+            if reaction_element != None:
+                self.scroll_to_element(reaction_element)
+                reaction_element.click()
+                reactionText = reaction_element.text
+                for term in reactionText.split(" "):
+                    if(term.strip("\n").strip("/").isnumeric()):
+                        self.totalReactions = int(term.strip("\n").strip("/"))
+                        break
 
-    def load_post_reactions(self, postElement):
-        post_id = self.post_id(postElement)
-        # try:
-        mydb = db()
-        self.MoveToElement(postElement)
+                print(self.totalReactions)
+                # self.totalReactions = int(reaction_element.text.split[" "][0])
+                reactionFrameElement = self.find_elem_by_xpath_with_wait("." + reactionFrameXpath)
+                profileElements = self.load_profiles(reactionFrameElement)
+                count = 0
+                for element in profileElements:
+                    # print(count)
+                    try:
+                        count += 1
+                        profile = self.find_elem_by_xpath_with_wait(".//a", element)
+                        name = element.text
+                        href = profile.get_attribute("href")
+                        href = href.strip("https://www.facebook.com/")
+                        By = ""
+                        if "/user/" in href:
+                            By = href.split("/user/")[1].split("/")[0]
+                        elif "?id=" in href:
+                            By = href.split("?id=")[1].split("&")[0]
+                        else:
+                            By = href.split("?")[0]
+                        likedBy.append([By.strip("/"), name])
+                    except:
+                        # print("Invalid Profile")
+                        temp = 1
+                    # likedBy.append("Invalid Id")
+                webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            return likedBy
+        except:
+            tries += 1
+            if(tries > 3):
+                return []
+            else:
+                self.load_post_reactions(reactionPane, tries)
 
-        scraped_date_time = self.curr_date_time()
-        liked_by = self.scrape_post_reactions(postElement)
-        scraped_id = scrapedReactionId()
-        memberIds = scrapedMembersId()
-        print("Scraping Reactions")
-        for profile_idx in tqdm(range(len(liked_by))):
-            profile = liked_by[profile_idx]
-            reaction_id = profile[0]+"&"+post_id
-            if(reaction_id not in scraped_id):
-                if(profile[0] not in memberIds):
-                    memberIds.append(profile[0])
-                    mydb.insert(profile, "fb_group_name")
-                reaction_param = [reaction_id, post_id,
-                                  scraped_date_time, profile[0]]
-                # print(reaction_param)
-                mydb.insert(reaction_param, "fb_group_posts_reactions")
-        mydb.closeCursor()
-        # except:
-        #     print("No reaction ",post_id)
+    def scrape_post_reactions(self, postElement, postId):
+        try:
+            mydb = db()
+            webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            self.scroll_to_element(postElement)
 
+            scrapedDateTime = self.curr_date_time()
+            reactionPaneElement = self.find_elem_by_xpath_with_wait("." + postReactionPaneXpath,postElement)
+            likedBy = self.load_post_reactions(postElement)
+            scrapedId = scraped_reaction_id()
+            memberIds = scraped_member_ids()
+            print("Scraping Reactions")
+            # print(likedBy)
+            for pIdx in tqdm(range(len(likedBy))):
+                profile = likedBy[pIdx]
+                reactionId = generate_id(profile[0],postId)
+                if(reactionId not in scrapedId):
+                    if(profile[0] not in memberIds):
+                        memberIds.append(profile[0])
+                        mydb.insert(profile, "fb_group_name")
+                    reactionParam = [reactionId, postId,scrapedDateTime, profile[0]]
+                    # print(reactionParam)
+                    mydb.insert(reactionParam, "fb_group_posts_reactions")
+            mydb.closeCursor()
+        except:
+            print("No reaction ",postId)
 
-def scrapedReactionId():
-    try:
-        mydb = db()
-        whereCondn = "1"
-        reaction_ids, size = mydb.select(
-            "fb_group_posts_reactions", "Reaction ID", whereCondn)
-        mydb.closeCursor()
-        return np.array(reaction_ids)[:, 0]
-    except:
-        return []
-
-
-def scrapedMembersId():
-    try:
-        mydb = db()
-        whereCondn = "1"
-        postIds, size = mydb.select("fb_group_name", "User ID", whereCondn)
-        mydb.closeCursor()
-        return list(np.array(postIds)[:, 0])
-    except:
-        return []
-
-
-def totalReactionsScraped(postId):
-    try:
-        mydb = db()
-        whereCondn = " `Facebook Post ID` = " + "'"+postId+"'"
-        postIds, size = mydb.select(
-            "fb_group_posts_reactions", "Reaction ID", whereCondn)
-        mydb.closeCursor()
-        return size
-    except:
-        return -1

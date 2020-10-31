@@ -1,95 +1,161 @@
 from fbLogin import *
-from config import fbGroupLink
+from xpaths import *
 from dbConnect import db
 from scrapperFunctions import *
 from datetime import datetime
 import numpy as np
-
+from config import fbGroupLink
+from customlog import *
 
 class fb_group_posts(scrapperFunctions):
     def __init__(self, fbObject):
         self.driver = fbObject.driver
 
-    def PostId(self, postElement):
-        return postElement.get_attribute('id')
+    # def post_id(self, postElement):
+    #     return postElement.get_attribute('id')
 
-    def PostedBy(self, postElement):
-        postedByNameElement = self.find_elem_by_class_name(
-            "_5eit", postElement)
-        postedByLink = self.find_elem_by_class_name(
-            "_5pb8", postedByNameElement).get_attribute("data-hovercard")
-        postedBy = postedByLink.split("=")[1].split("&")[0]
-        return postedBy
+    def posted_by(self, postHeaderElement):
+        postedById = postHeaderElement.find_element_by_xpath("." + postedByIdElementXpath)
+        href = postedById.get_attribute("href")
+        href = href.strip("https://www.facebook.com/")
+        postedById = ""
+        if "/user/" in href:
+            postedById = href.split("/user/")[1].split("/")[0]
+        elif "?id=" in href:
+            postedById = href.split("?id=")[1].split("&")[0]
+        else:
+            postedById = href.split("?")[0]
+        return postedById.strip("/")
 
-    def PostedByName(self, postElement):
-        return self.find_elem_by_class_name("_5pb8", postElement).get_attribute("title")
+    def posted_by_name(self, postHeaderElement):
+        postedByNameElement = self.find_elem_by_xpath_with_wait("." + postedByNameElementXpath, postHeaderElement)
+        postedByName = postedByNameElement.text
+        return postedByName
 
-    def PostTimestamp(self, postElement):
+    def post_timestamp(self, postHeaderElement):
+        self.scroll_to_element(postHeaderElement)
+        count = 0
+        postTime = ""
+        count = 1
+        while(count < 10):
+            try:
+                self.scroll_to_element(postHeaderElement)
+                while(count < 5):
+                    try:
+                        timestampElement = self.find_elem_by_xpath_with_wait("." + postTimestampXpath, postHeaderElement)
+                        self.move_to_element(timestampElement)
+                        break
+                    except Exception as e1:
+                        time.sleep(5)
+                        count += 1
+                try:
+                    postTimeElements = self.find_elems_by_xpath_with_wait("." + toolTipXpath)
+                except: 
+                    postTimeElements = self.find_elems_by_xpath_with_wait(toolTipXpath)
+
+                # print(postTimeElement.text)
+                # if len(postTimeElements) == 0:
+                #     raise
+                for timeElement in postTimeElements:
+                    try:
+                        postTime = timeElement.text
+                        # print(postTime)
+                        dateTime = parse(postTime)
+                        dateTimestamp = dateTime.timestamp()
+                        break
+                    except Exception as e:
+                        logging.info("Multiple Tooltip Elements: " + str(e))
+                # print(dateTimestamp)
+                temp = dateTimestamp + 1
+                break
+            except Exception as e:
+                logging.info("Timestamp format Error : " + str(e))
+                time.sleep(1*count)
+                count += 1
+                webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+                # print("Retry #",count)
+        if(count >= 10):
+            raise
+        logging.info(count)
+        # dateTime = int(convert_to_timestamp(postTime))
+        # print(dateTime)
+        self.postTimestamp = dateTimestamp
+        return dateTimestamp
+
+    def posted_at(self, postHeaderElement):
         try:
-            timestamp = int(self.find_elem_by_class_name(
-                "_5ptz", postElement).get_attribute("data-utime"))
+            timestamp = int(self.postTimestamp)
         except:
             timestamp = 0
         return datetime.fromtimestamp(timestamp).isoformat()
 
-    def PostContent(self, postElement):
-        postContent = []
-        postDetails = self.find_elems_by_class_name_with_wait(
-            "_5pbx", postElement)
-        if len(postDetails) != 0:
-            # self.CheckSeeMore(postElement)
-            postContent.append(postDetails[0].text)
-        else:
-            postContent.append("No Content")
-        # print(views)
-        # print(i, ":", postContent[i])
-        return postContent[0]
 
-    def CheckSeeMore(self, postElement):
-        # postElements = self.find_elems_by_class_name_with_wait("_4mrt")
-        postDetails = self.find_elems_by_class_name_with_wait(
-            "_5pbx", postElement)
-        seeMoreLink = self.find_elems_by_class_name_with_wait(
-            "text_exposed_hide", postDetails[0])
-        if len(seeMoreLink) > 0:
+    def post_content(self, postElement):
+        postContent = ""
+        postContentElement = self.find_elem_by_xpath_with_wait("." + postContentXpath, postElement)
+        try:
+            postContent += postContentElement.text
+        except:
+            logging.info("No text Content")
+        
+        postContent += "----------IMAGE ALT------------"
+        try:
+            postImageElements = self.find_elems_by_xpath_with_wait("." + postContentImageXpath,postElement)
+            for imageElement in postImageElements:
+                postContent += imageElement.text
+        except:
+            logging.info("No Image in post")
+        
+        postImageElements = self.find_elems_by_xpath_with_wait(".//img", postElement)
+        for image in postImageElements:
+            postContent += image.get_attribute("alt")
+
+        return postContent
+
+    def click_see_more(self, postElement):
+        # postElements = self.find_elems_by_xpath_with_wait("."+"_4mrt")
+        # postDetails = self.find_elems_by_xpath_with_wait("."+"_5pbx", postElement)
+        seeMoreElement = self.find_elem_by_xpath_with_wait("."+seeMoreElementXpath, postElement)
+        while seeMoreElement:
             try:
-                self.MoveToElement(seeMoreLink[-1])
-                seeMoreLink[-1].click()
+                self.move_to_element(seeMoreElement)
+                seeMoreElement.click()
             except:
                 # time.sleep(1)
-                print("Some text hidden")
+                logging.info("Some text hidden")
+            seeMoreElement = self.find_elem_by_xpath_with_wait("."+seeMoreElementXpath, postElement)
             # seeMoreLink[-1].click()
             # print(postDetails[0].text)
 
-    def PostType(self, postElement):
+    def post_type(self, postHeaderElement):
         Posttype = []
-        query = ["live", "QnA", "link", "unit",
-                 "event", "Pre Recorded Video", "Query"]
+        query = ["live", "qna", "link", "unit",
+                 "event", "pre recorded video", "query"]
+        
         # PostsNo = len(postElements)
         # for i in range(PostsNo):
-        PostTypeElement = self.find_elem_by_class_name_with_wait(
-            "_5vra", postElement)
-        # if len(PostTypeElements) > 0:
-        if PostTypeElement != None:
-            if query[0] in PostTypeElement.text:
+        # postHeaderElement = self.find_elem_by_xpath_with_wait("."+"_5vra", postElement)
+        # if len(postHeaderElements) > 0:
+        if postHeaderElement != None:
+            if query[0] in postHeaderElement.text.lower():
                 Posttype.append("Live Session")
 
-            elif query[1] in PostTypeElement.text:
+            elif query[1] in postHeaderElement.text.lower():
                 Posttype.append("QnA Session")
 
-            elif query[2] in PostTypeElement.text:
+            elif query[2] in postHeaderElement.text.lower():
                 Posttype.append("Link Shared")
 
-            elif query[3] in PostTypeElement.text:
+            elif query[3] in postHeaderElement.text.lower():
                 Posttype.append("Unit Created")
 
-            elif query[4] in PostTypeElement.text:
+            elif query[4] in postHeaderElement.text.lower():
                 Posttype.append("Event Created")
 
-            elif query[5] in PostTypeElement.text:
+            elif query[5] in postHeaderElement.text.lower():
                 Posttype.append("Pre Recorded Video Posted")
 
-            elif query[6] in PostTypeElement.text:
+            elif query[6] in postHeaderElement.text.lower():
                 Posttype.append("Query Made")
 
             else:
@@ -98,59 +164,40 @@ class fb_group_posts(scrapperFunctions):
             Posttype.append("Not a Post")
         return Posttype[0]
 
-    def load_posts(self, postElement):
-        self.MoveToElement(postElement)
-        postIds = scrapedPostsId()
-        Id = self.PostId(postElement)
+    def scrape_posts(self, postElement):
+        logging.info("Post Content: {}".format(postElement.text))
+        webdriver.ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+        self.scroll_to_element(postElement)
+        self.click_see_more(postElement)
+        postIds = scraped_post_ids()
+        postHeaderElement = self.find_elem_by_xpath_with_wait("." + postHeaderXpath, postElement)
+        timestamp = self.post_timestamp(postHeaderElement)
+        time = self.posted_at(postHeaderElement)
+        by = self.posted_by(postHeaderElement)
+        content = self.post_content(postElement)
+        groupId = fbGroupLink.split("/")[-1]
+        Id = generate_id(timestamp,by,content,groupId)
+
+        self.postId = Id
+        self.postYear = time.split("-")[0]
+        
         if(Id not in postIds):
-            seeMore = self.find_elems_by_class_name(
-                "see_more_link", postElement)
-            count = 0
-            idx = 0
-            while(len(seeMore) != 0):
-                try:
-                    self.MoveToElement(seeMore[idx])
-                    seeMore[idx].click()
-                except:
-                    break
-                currSeeMore = seeMore[0]
-                seeMore = self.find_elems_by_class_name(
-                    "see_more_link", postElement)
-                if(currSeeMore == seeMore[0]):
-                    print("Loading")
-                    count += 1
-                    sleep(2)
-                else:
-                    count = 0
-
-                if count > 2:
-                    print("Skipping load")
-                    idx += 1
-                else:
-                    idx = 0
-
-            # print("Inside the class")
-
-            memberIds = scrapedMembersId()
+            memberIds = scraped_member_ids()
             mydb = db()
             # toInsertMemIds = []
 
-            by = self.PostedBy(postElement)
-
             if(by not in memberIds):
                 memberIds.append(by)
-                name = self.PostedByName(postElement)
+                name = self.posted_by_name(postHeaderElement)
                 mem_data = [by, name]
                 mydb.insert(mem_data, "fb_group_name")
-            time = self.PostTimestamp(postElement)
-            content = self.PostContent(postElement)
-            typePost = self.PostType(postElement)
+            typePost = self.post_type(postHeaderElement)
             group_id = (fbGroupLink.split("/groups/")[1]).strip('/')
             post_param = [Id, content, time, by, typePost, group_id]
             mydb.insert(post_param, "fb_group_posts")
-            print(post_param)
+            logging.info(post_param)
         else:
-            print("Post already scraped")
+            logging.info("Post already scraped")
         # print("Post Data Loaded")
         # for post_data in post_params:
 
@@ -159,41 +206,23 @@ class fb_group_posts(scrapperFunctions):
         # print("Post Data inserted in Database")
 
 
-def scrapedPostsId():
-    try:
-        mydb = db()
-        whereCondn = "1"
-        postIds, size = mydb.select(
-            "fb_group_posts", "Facebook Post ID", whereCondn)
-        return np.array(postIds)[:, 0]
-    except:
-        return []
 
 
-def scrapedMembersId():
-    try:
-        mydb = db()
-        whereCondn = "1"
-        postIds, size = mydb.select("fb_group_name", "User ID", whereCondn)
-        return list(np.array(postIds)[:, 0])
-    except:
-        return []
 
-
-if __name__ == "__main__":
-    fb = fb_login()
-    fbGrps = fb_group_posts(fb)
-    # fbGrps.LoadGroup(50)
-    postIds = scrapedPostsId()
-    mydb = db()
-    idx = 0
-    for postElem in fb.postElements:
-        print(idx)
-        idx += 1
-        Id = fbGrps.PostId(postElem)
-        if(Id not in postIds):
-            by = fbGrps.PostedBy(postElem)
-            time = fbGrps.PostTimestamp(postElem)
-            content = fbGrps.PostContent(postElem)
-            typePost = fbGrps.PostType(postElem)
-            mydb.insert([Id, content, time, by, typePost], "fb_group_posts")
+# if __name__ == "__main__":
+#     fb = fb_login()
+#     fbGrps = fb_group_posts(fb)
+#     # fbGrps.LoadGroup(50)
+#     postIds = scraped_post_ids()
+#     mydb = db()
+#     idx = 0
+#     for postElem in fb.postElements:
+#         print(idx)
+#         idx += 1
+#         Id = fbGrps.post_id(postElem)
+#         if(Id not in postIds):
+#             by = fbGrps.posted_by(postElem)
+#             time = fbGrps.post_timestamp(postElem)
+#             content = fbGrps.post_content(postElem)
+#             typePost = fbGrps.post_type(postElem)
+#             mydb.insert([Id, content, time, by, typePost], "fb_group_posts")

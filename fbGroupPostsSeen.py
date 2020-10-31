@@ -28,7 +28,7 @@ class fb_group_posts_seen(scrapperFunctions):
         if(len(PostSeenElements) > 0):
             self.driver.execute_script(
                 "window.scrollBy(document.body.scrollWidth,0);")
-            self.MoveToElement(PostSeenElements[0])
+            self.move_to_element(PostSeenElements[0])
             PostSeenElements[0].click()
             sleep(1)
             SeenDialog = self.find_elems_by_class_name("_4-i2")
@@ -39,7 +39,7 @@ class fb_group_posts_seen(scrapperFunctions):
                 # time.sleep(1)
                 self.driver.execute_script(
                     "window.scrollBy(document.body.scrollWidth,0);")
-                self.MoveToElement(SeeMore[0])
+                self.move_to_element(SeeMore[0])
                 SeeMore[0].click()
             sleep(1)
             SeenNo = int((self.find_elems_by_class_name_with_wait(
@@ -59,7 +59,7 @@ class fb_group_posts_seen(scrapperFunctions):
 
     def load_posts_seen(self, postElement):
         # mydb = db()
-        self.MoveToElement(postElement)
+        self.move_to_element(postElement)
         post_id = self.post_id(postElement)
         scraped_date_time = self.curr_date_time()
         seen_by, not_seen_by = self.scrape_post_seen_data(postElement)

@@ -8,3 +8,5 @@ env/
 config.py
 *.ipynb
 tempCodeRunnerFile.py
+Temp/
+xpaths.py

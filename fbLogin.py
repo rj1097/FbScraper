@@ -1,8 +1,9 @@
 from config import driverPath, fbId, fbPasswd, fbGroupLink, totalPosts
+from xpaths import postXpath, groupFeedXpath
 # from dbConnect import
 from scrapperFunctions import *
 from time import sleep
-
+from customlog import *
 
 class fb_login(scrapperFunctions):
     def __init__(self):
@@ -39,12 +40,12 @@ class fb_login(scrapperFunctions):
 
     def LoadGroup(self, totalPosts=totalPosts):
         # self.visitGroup()
-        self.postElements = self.find_elems_by_class_name_with_wait("_4mrt")
+        groupFeedElement = self.find_elem_by_xpath_with_wait(groupFeedXpath)
+        self.postElements = self.find_elems_by_xpath_with_wait("." + postXpath, groupFeedElement)
         count = 0
         oldPostsLoaded = 0
         while (count < 2) & (len(self.postElements) <= totalPosts):
-            self.postElements = self.find_elems_by_class_name_with_wait(
-                "_4mrt")
+            self.postElements = self.find_elems_by_xpath_with_wait(postXpath)
             ChangeInPostsNo = len(self.postElements) - oldPostsLoaded
             print("Change:", ChangeInPostsNo)
             if ChangeInPostsNo == 0:
@@ -57,8 +58,9 @@ class fb_login(scrapperFunctions):
             self.driver.execute_script(
                 "window.scrollTo(0, document.body.scrollHeight);")
             sleep(1)
+        self.postElements = self.postElements[0:totalPosts]
+        print("Total posts:", len(self.postElements))
 
-        print("Totalsposts:", len(self.postElements))
         print("All posts loaded")
 
     def logout(self):
