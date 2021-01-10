@@ -20,7 +20,8 @@ This tool is made to micro-manage any facebook group. This tool uses selenium we
     - Add the exact facebook group link. 
     <!-- Incomplete -->
 6. Install chrome (If not already installed) and note down the chrome version. Now download the appropriate chromedriver and put it inside the package folder.
-7. Now you can run the python package.
+7. In config.py, set the totalPosts variable. It will define the number of posts that needs to be scraped. 
+8. Now you can run the python package.
     
     - Use the command `python -u "PATH_TO_FBSCRAPER"\main.py"`
 

@@ -217,7 +217,10 @@ class db:
                                   "VALUES (%s, %s)")
             }
 
-            cursor.execute(add[entity], values)
+            if(type(values[0]) == str):
+                cursor.execute(add[entity], values)
+            else:
+                cursor.executemany(add[entity], values)
             #print(add[entity], values)
 
             self.dbConnector.commit()
